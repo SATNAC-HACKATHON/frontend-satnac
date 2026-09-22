@@ -1,0 +1,133 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import {
+  Activity,
+  Bell,
+  BookOpen,
+  Database,
+  Gauge,
+  LayoutDashboard,
+  ListOrdered,
+  Menu,
+  X,
+} from "lucide-react";
+import { snapshot } from "@/lib/npm/snapshot";
+import { cn } from "@/lib/utils";
+
+const nav = [
+  { href: "/overview", label: "Overview", icon: LayoutDashboard },
+  { href: "/incidents", label: "Incidents", icon: ListOrdered },
+  { href: "/signals", label: "Signals", icon: Activity },
+  { href: "/alarms", label: "Alarms", icon: Bell },
+  { href: "/evidence", label: "Evidence", icon: Database },
+  { href: "/benefit", label: "Benefit", icon: Gauge },
+];
+
+function isActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function ConsoleShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const incident = snapshot.clusters[0];
+
+  const sidebar = (
+    <div className="flex h-full flex-col bg-[#10161d] text-slate-300">
+      <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
+        <Link href="/overview" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-teal-700 text-sm font-semibold text-white">
+            NPM
+          </span>
+          <span className="leading-tight">
+            <span className="block text-sm font-semibold text-white">NPM Desk</span>
+            <span className="block text-[11px] text-slate-400">Decision support</span>
+          </span>
+        </Link>
+        <button className="rounded-md p-1 text-slate-400 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <nav className="flex-1 space-y-1 px-3 py-4">
+        {nav.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(pathname, item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm",
+                active ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="space-y-3 border-t border-white/10 p-3">
+        {incident ? (
+          <Link
+            href={`/incidents/${incident.clusterId}`}
+            onClick={() => setOpen(false)}
+            className="block rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5"
+          >
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Open incident</div>
+            <div className="mt-1 font-mono text-xs text-white">{incident.clusterId}</div>
+            <div className="mt-0.5 text-xs text-slate-400">{incident.cellId}</div>
+          </Link>
+        ) : null}
+        <Link
+          href="/"
+          onClick={() => setOpen(false)}
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+            pathname === "/" ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white",
+          )}
+        >
+          <BookOpen className="h-4 w-4" />
+          Challenge brief
+        </Link>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-svh bg-[#f3f5f7] text-slate-900">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] lg:block">{sidebar}</aside>
+      {open ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button className="absolute inset-0 bg-slate-950/50" aria-label="Close menu" onClick={() => setOpen(false)} />
+          <div className="relative h-full w-[260px]">{sidebar}</div>
+        </div>
+      ) : null}
+
+      <div className="lg:pl-[248px]">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-slate-200 bg-[#f3f5f7]/90 px-4 backdrop-blur sm:px-6">
+          <div className="flex items-center gap-3">
+            <button className="rounded-md p-1.5 text-slate-600 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
+              <Menu className="h-5 w-5" />
+            </button>
+            <p className="text-sm text-slate-600">
+              <span className="font-medium text-slate-900">Synthetic Telkom scenario</span>
+              <span className="hidden sm:inline"> · cell degradation · seed {snapshot.manifest.seed}</span>
+            </p>
+          </div>
+          <p className="hidden text-xs text-slate-500 md:block">Not a live network feed</p>
+        </header>
+        <main className="px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">{children}</div>
+        </main>
+      </div>
+    </div>
+  );
+}

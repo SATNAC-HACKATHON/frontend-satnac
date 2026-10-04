@@ -58,16 +58,40 @@ function markerColor(result: string) {
   return result === "pass" ? PASS : FAIL;
 }
 
+function Interaction({ enabled }: { enabled: boolean }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const gestures = [map.scrollWheelZoom, map.touchZoom, map.doubleClickZoom, map.boxZoom, map.keyboard];
+    for (const gesture of gestures) {
+      if (!gesture) continue;
+      if (enabled) gesture.enable();
+      else gesture.disable();
+    }
+    const zoom = enabled ? L.control.zoom({ position: "topleft" }) : null;
+    zoom?.addTo(map);
+    const frame = window.setTimeout(() => map.invalidateSize(), 60);
+    return () => {
+      window.clearTimeout(frame);
+      zoom?.remove();
+    };
+  }, [enabled, map]);
+
+  return null;
+}
+
 export function LeafletMap({
   samples,
   boundsKey,
   selectedId,
   onSelect,
+  zoomEnabled = false,
 }: {
   samples: MapSample[];
   boundsKey: string;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  zoomEnabled?: boolean;
 }) {
   const passes = samples.filter((sample) => sample.result === "pass" && sample.id !== selectedId);
   const fails = samples.filter((sample) => sample.result !== "pass" && sample.id !== selectedId);
@@ -80,12 +104,12 @@ export function LeafletMap({
       zoom={13}
       minZoom={4}
       maxZoom={19}
-      scrollWheelZoom
-      doubleClickZoom
-      touchZoom
-      boxZoom
-      keyboard
-      zoomControl
+      scrollWheelZoom={false}
+      doubleClickZoom={false}
+      touchZoom={false}
+      boxZoom={false}
+      keyboard={false}
+      zoomControl={false}
       className="h-full w-full"
     >
       <TileLayer
@@ -95,6 +119,7 @@ export function LeafletMap({
         maxNativeZoom={19}
       />
       <ScaleControl imperial={false} position="bottomleft" />
+      <Interaction enabled={zoomEnabled} />
       <Frame samples={samples} boundsKey={boundsKey} />
       <FlyTo sample={selected} />
       {ordered.map((sample) => {

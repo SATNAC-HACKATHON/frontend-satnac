@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatClock } from "@/lib/npm/format";
 import { snapshot } from "@/lib/npm/snapshot";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,7 @@ export function DriveMap({
       : (sites.find((site) => site.fail > 0)?.siteId ?? sites[0]?.siteId ?? "all");
   const defaultResult = prepared.some((sample) => sample.siteId === defaultSite && sample.result !== "pass") ? "fail" : "all";
 
+  const [fullScreen, setFullScreen] = useState(false);
   const [siteId, setSiteId] = useState(defaultSite);
   const [cellId, setCellId] = useState("all");
   const [result, setResult] = useState<"all" | "pass" | "fail">(defaultResult);
@@ -90,15 +91,43 @@ export function DriveMap({
     choose(null);
   }
 
+  useEffect(() => {
+    if (!fullScreen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setFullScreen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [fullScreen]);
+
   return (
-    <section className={cn("overflow-hidden bg-white", framed && "rounded-2xl border border-slate-200 shadow-sm")}>
+    <section
+      className={cn(
+        "overflow-hidden bg-white",
+        fullScreen ? "fixed inset-0 z-50 flex flex-col" : framed && "rounded-2xl border border-slate-200 shadow-sm",
+      )}
+    >
       <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
-          <p className="text-xs text-slate-500">
-            {visible.length} on the map
-            {cityName ? ` · ${cityName}` : ""}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-slate-500">
+              {visible.length} on the map
+              {cityName ? ` · ${cityName}` : ""}
+            </p>
+            <button
+              type="button"
+              onClick={() => setFullScreen((open) => !open)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              {fullScreen ? "Exit" : "Full screen"}
+            </button>
+          </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <label className="block">
@@ -192,14 +221,20 @@ export function DriveMap({
         </div>
       </div>
 
-      <div className="field-map relative h-[560px]">
+      <div className={cn("field-map relative", fullScreen ? "min-h-0 flex-1" : "h-[560px]")}>
         {visible.length === 0 ? (
           <p className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-slate-500">
             Nothing matches these filters.
           </p>
         ) : (
           <div className="absolute inset-0">
-            <LeafletMap samples={visible} boundsKey={boundsKey} selectedId={selectedId ?? null} onSelect={choose} />
+            <LeafletMap
+              samples={visible}
+              boundsKey={boundsKey}
+              selectedId={selectedId ?? null}
+              onSelect={choose}
+              zoomEnabled={fullScreen}
+            />
           </div>
         )}
       </div>

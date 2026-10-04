@@ -201,6 +201,31 @@ def main() -> None:
             }
         )
 
+    geo_samples = []
+    for row in drive_tests:
+        lat = num(row["latitude"], 6)
+        lng = num(row["longitude"], 6)
+        if lat is None or lng is None:
+            continue
+        cell = cells.get(row["serving_cell_id"], {})
+        geo_samples.append(
+            {
+                "id": row["drive_test_id"],
+                "t": row["timestamp"],
+                "siteId": row["site_id"],
+                "cellId": row["serving_cell_id"],
+                "city": cell.get("city", ""),
+                "lat": lat,
+                "lng": lng,
+                "rsrp": num(row["rsrp_dbm"]),
+                "sinr": num(row["sinr_db"]),
+                "latency": num(row["ping_latency_ms"], 0),
+                "download": num(row["download_mbps"]),
+                "result": row["test_result"],
+                "clusters": membership(row["drive_test_id"], cluster_drive_ids),
+            }
+        )
+
     drive_rows = []
     for row in drive_tests:
         if row["drive_test_id"] not in all_cluster_drives:
@@ -332,6 +357,7 @@ def main() -> None:
         "alarms": alarm_rows,
         "complaints": complaint_rows,
         "driveTests": drive_rows,
+        "geoSamples": geo_samples,
         "topology": topology_rows,
     }
 

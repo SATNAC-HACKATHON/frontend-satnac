@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, EpistemicPanel, Panel } from "@/components/npm/ui";
 import { TrendChart } from "@/components/npm/charts";
+import { DriveMap } from "@/components/npm/drive-map";
+import { MagnitudeChart } from "@/components/npm/magnitude";
+import { Badge, EpistemicPanel, Panel } from "@/components/npm/ui";
 import { formatPct, formatStamp } from "@/lib/npm/format";
+import { snapshot } from "@/lib/npm/snapshot";
+import { highest, lowest, windowPoints } from "@/lib/npm/stories";
+import { cn } from "@/lib/utils";
 import type {
   Alarm,
   ChartPoint,
@@ -41,7 +46,14 @@ export function InvestigationView({
 }) {
   const [causeIndex, setCauseIndex] = useState(0);
   const [tab, setTab] = useState<(typeof tabs)[number]>("Alarms");
+  const [selectedDrive, setSelectedDrive] = useState<string | null>(null);
   const cause = cluster.rankedCandidates[causeIndex];
+  const focus = windowPoints(series, cluster.start, cluster.end);
+  const accessMin = lowest(focus, "accessibility");
+  const throughputMin = lowest(focus, "throughput");
+  const lossMax = highest(focus, "packetLoss");
+  const city = snapshot.cells.find((cell) => cell.cellId === cluster.cellId)?.city ?? "";
+  const failedDrives = driveTests.filter((row) => row.result !== "pass").length;
 
   return (
     <div className="space-y-6">
@@ -72,27 +84,20 @@ export function InvestigationView({
         </EpistemicPanel>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-        <Panel title="Ranked causes" aside={<span className="font-mono text-[10px] text-slate-400">rca_report.json</span>}>
-          <ul className="p-2">
-            {cluster.rankedCandidates.map((candidate, index) => (
-              <li key={candidate.rootCause}>
-                <button
-                  onClick={() => setCauseIndex(index)}
-                  className={`w-full rounded-lg px-3 py-2 text-left ${index === causeIndex ? "bg-slate-100" : "hover:bg-slate-50"}`}
-                >
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="font-medium text-slate-900">{candidate.rootCause}</span>
-                    <span className="font-mono text-xs text-slate-500">{candidate.score.toFixed(0)}</span>
-                  </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-amber-600" style={{ width: `${Math.min(candidate.score, 100)}%` }} />
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Panel>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <MagnitudeChart
+          title="Ranked causes, on one scale"
+          caption="Scores from rca_report.json. Bars start at zero and share 0–100. Select a cause to read its evidence."
+          max={100}
+          selectedId={cause?.rootCause}
+          onSelect={(id) => setCauseIndex(Math.max(0, cluster.rankedCandidates.findIndex((candidate) => candidate.rootCause === id)))}
+          rows={cluster.rankedCandidates.map((candidate, index) => ({
+            id: candidate.rootCause,
+            label: candidate.rootCause,
+            value: candidate.score,
+            tone: index === causeIndex ? "inference" : "ink",
+          }))}
+        />
         <EpistemicPanel kind="inference" title={cause?.rootCause ?? "Cause"} source={`${cluster.clusterId} · score ${cause?.score.toFixed(0) ?? "—"}`}>
           <ul className="space-y-2">
             {cause?.evidence.map((item) => (
@@ -126,46 +131,74 @@ export function InvestigationView({
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Accessibility" className="p-3">
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Lowest accessibility sample was {accessMin == null ? "—" : `${accessMin.toFixed(1)}%`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Scale is 70–100%. Dashed line is the rolling baseline.</p>
           <TrendChart
             points={series}
             measuredKey="accessibility"
             baselineKey="baselineAccessibility"
             measuredLabel="Accessibility"
-            baselineLabel="Baseline"
-            unit="%"
+            suffix="%"
+            domain={[70, 100]}
+            mark="min"
             windowStart={cluster.start}
             windowEnd={cluster.end}
             height={180}
           />
         </Panel>
-        <Panel title="Downlink throughput" className="p-3">
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Lowest downlink sample was {throughputMin == null ? "—" : `${throughputMin.toFixed(1)} Mbps`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero.</p>
           <TrendChart
             points={series}
             measuredKey="throughput"
             baselineKey="baselineThroughput"
-            measuredLabel="Throughput Mbps"
-            baselineLabel="Baseline Mbps"
-            unit=""
+            measuredLabel="Downlink"
+            suffix=" Mbps"
+            domain="zero"
+            mark="min"
             windowStart={cluster.start}
             windowEnd={cluster.end}
             height={180}
             color="#0f172a"
           />
         </Panel>
-        <Panel title="Packet loss" className="p-3">
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Packet loss peaked at {lossMax == null ? "—" : `${lossMax.toFixed(1)}%`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero. Loss above 2% is cited as transport evidence.</p>
           <TrendChart
             points={series}
             measuredKey="packetLoss"
-            measuredLabel="Packet loss %"
-            unit="%"
+            measuredLabel="Packet loss"
+            suffix="%"
+            domain="zero"
+            mark="max"
             windowStart={cluster.start}
             windowEnd={cluster.end}
             height={180}
-            color="#b45309"
+            color="#be123c"
           />
         </Panel>
       </div>
+
+      <DriveMap
+        samples={driveTests}
+        initialSiteId={cluster.siteId}
+        selectedId={selectedDrive}
+        onSelect={(id) => {
+          setSelectedDrive(id);
+          if (id) setTab("Drive tests");
+        }}
+        title={`${failedDrives} failed drive tests${city ? ` in ${city}` : ""}`}
+        caption="Red failed and green passed, on the coordinates from the drive-test log. Select a sample to centre it. The street names replace reading latitude and longitude."
+      />
 
       <Panel
         title="Supporting records"
@@ -186,11 +219,17 @@ export function InvestigationView({
         <div className="max-h-[420px] overflow-auto">
           {tab === "Alarms" ? <AlarmTable rows={alarms} /> : null}
           {tab === "Complaints" ? <ComplaintTable rows={complaints} /> : null}
-          {tab === "Drive tests" ? <DriveTable rows={driveTests} /> : null}
+          {tab === "Drive tests" ? <DriveTable rows={driveTests} selectedId={selectedDrive} onSelect={setSelectedDrive} /> : null}
           {tab === "Topology" ? <TopologyTable rows={topology} /> : null}
         </div>
       </Panel>
 
+      <div>
+        <h2 className="text-sm font-semibold text-slate-950">Scenario summary, in its own words</h2>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          This file tells the same story as the engineer report. Where a number differs, the table at the top of the page keeps both.
+        </p>
+      </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <EpistemicPanel kind="fact" title="Scenario summary facts" source="incident_summary.csv">
           {summary.observedFacts}
@@ -261,7 +300,15 @@ function ComplaintTable({ rows }: { rows: Complaint[] }) {
   );
 }
 
-function DriveTable({ rows }: { rows: DriveTest[] }) {
+function DriveTable({
+  rows,
+  selectedId,
+  onSelect,
+}: {
+  rows: DriveTest[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
   return (
     <table className="w-full min-w-[720px] text-left text-sm">
       <thead className="sticky top-0 bg-white text-[11px] uppercase tracking-wide text-slate-400">
@@ -275,7 +322,11 @@ function DriveTable({ rows }: { rows: DriveTest[] }) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.id} className="border-t border-slate-100">
+          <tr
+            key={row.id}
+            onClick={() => onSelect(row.id)}
+            className={cn("cursor-pointer border-t border-slate-100", selectedId === row.id ? "bg-slate-100" : "hover:bg-slate-50")}
+          >
             <td className="px-4 py-2 font-mono text-xs text-slate-500">{formatStamp(row.t)}</td>
             <td className="px-4 py-2"><Badge value={row.result} /></td>
             <td className="px-4 py-2 font-mono text-xs">{row.download.toFixed(1)} Mbps</td>

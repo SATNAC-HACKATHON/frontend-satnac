@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MagnitudeChart } from "@/components/npm/magnitude";
 import { Badge, Metric, PageHeader, Panel } from "@/components/npm/ui";
 import { backgroundAlarms, incidentQueue } from "@/lib/npm/derive";
 import { formatPct, formatWindow } from "@/lib/npm/format";
@@ -12,8 +13,8 @@ export default function IncidentsPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Prioritisation"
-        title="Significant issues, in the order an engineer should open them"
-        description="Priority follows detection score and customer-side evidence. Stable cells and background alarms stay off this queue."
+        title={queue.length === 1 ? "Open this incident first" : "Significant issues, in the order to open them"}
+        description="Priority follows detection score. Stable cells and background alarms stay off this queue."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -67,6 +68,23 @@ export default function IncidentsPage() {
           </Link>
         ))}
       </div>
+
+      <MagnitudeChart
+        title="Why the queue has one name on it"
+        caption="Lowest accessibility sample, bars starting at 0%. The degraded cell is the only one the pipeline promoted."
+        max={100}
+        unit="%"
+        digits={1}
+        rows={[...snapshot.cells]
+          .sort((a, b) => a.minAccessibility - b.minAccessibility)
+          .map((cell) => ({
+            id: cell.cellId,
+            label: cell.cellId,
+            note: cell.city,
+            value: cell.minAccessibility,
+            tone: cell.status === "degraded" ? "alert" : "steady",
+          }))}
+      />
 
       <Panel title="Watched, not opened">
         <p className="px-4 pt-3 text-sm text-slate-600">

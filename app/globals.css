@@ -23,3 +23,35 @@ html,
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+
+.field-map .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #e6eef2;
+  font-family: inherit;
+}
+
+.field-map .leaflet-tile-pane { z-index: 1; }
+.field-map .leaflet-overlay-pane { z-index: 2; }
+.field-map .leaflet-shadow-pane { z-index: 3; }
+.field-map .leaflet-marker-pane { z-index: 4; }
+.field-map .leaflet-tooltip-pane { z-index: 5; }
+.field-map .leaflet-popup-pane { z-index: 6; }
+.field-map .leaflet-top,
+.field-map .leaflet-bottom { z-index: 7; }
+
+.field-map .leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.field-map .leaflet-popup-content {
+  margin: 10px 12px;
+  font-family: inherit;
+}
+
+.field-map .leaflet-control-attribution {
+  max-width: 16rem;
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.88);
+}

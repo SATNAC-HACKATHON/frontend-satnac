@@ -12,13 +12,19 @@ export function AlarmBoard({ alarms }: { alarms: Alarm[] }) {
   const [severity, setSeverity] = useState("all");
 
   const rows = useMemo(() => {
-    return alarms.filter((alarm) => {
-      if (severity !== "all" && alarm.severity !== severity) return false;
-      if (filter === "In the cluster") return alarm.clusters.length > 0;
-      if (filter === "Duplicate group") return alarm.correlated;
-      if (filter === "Background") return alarm.clusters.length === 0;
-      return true;
-    });
+    return alarms
+      .filter((alarm) => {
+        if (severity !== "all" && alarm.severity !== severity) return false;
+        if (filter === "In the cluster") return alarm.clusters.length > 0;
+        if (filter === "Duplicate group") return alarm.correlated;
+        if (filter === "Background") return alarm.clusters.length === 0;
+        return true;
+      })
+      .slice()
+      .sort((a, b) => {
+        const rank = (alarm: Alarm) => (alarm.correlated ? 0 : alarm.clusters.length > 0 ? 1 : 2);
+        return rank(a) - rank(b) || a.raised.localeCompare(b.raised);
+      });
   }, [alarms, filter, severity]);
 
   const severities = ["all", ...Array.from(new Set(alarms.map((alarm) => alarm.severity)))];
@@ -64,7 +70,16 @@ export function AlarmBoard({ alarms }: { alarms: Alarm[] }) {
           </thead>
           <tbody>
             {rows.map((alarm) => (
-              <tr key={alarm.id} className="border-t border-slate-100 align-top">
+              <tr
+                key={alarm.id}
+                className={
+                  alarm.correlated
+                    ? "border-t border-teal-100 bg-teal-50/50 align-top"
+                    : alarm.clusters.length > 0
+                      ? "border-t border-amber-100 bg-amber-50/60 align-top"
+                      : "border-t border-slate-100 align-top"
+                }
+              >
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">{formatStamp(alarm.raised)}</td>
                 <td className="px-4 py-3"><Badge value={alarm.severity} /></td>
                 <td className="px-4 py-3 text-slate-600">{alarm.domain}</td>

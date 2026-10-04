@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CellMultiples } from "@/components/npm/cell-multiples";
 import { TrendChart } from "@/components/npm/charts";
 import { Badge, Panel } from "@/components/npm/ui";
 import { chartPoints } from "@/lib/npm/derive";
 import { formatStamp } from "@/lib/npm/format";
 import { snapshot } from "@/lib/npm/snapshot";
+import { highest, lowest, windowPoints } from "@/lib/npm/stories";
 
 export function SignalExplorer() {
   const cells = snapshot.cells;
@@ -20,70 +22,133 @@ export function SignalExplorer() {
     [detections, cellId],
   );
   const clusterWindow = cluster && cluster.cellId === cellId ? { start: cluster.start, end: cluster.end } : undefined;
+  const focus = windowPoints(points, clusterWindow?.start, clusterWindow?.end);
+  const accessMin = lowest(focus, "accessibility");
+  const throughputMin = lowest(focus, "throughput");
+  const latencyMax = highest(focus, "latency");
+  const prbMax = highest(focus, "prb");
+  const lossMax = highest(focus, "packetLoss");
+  const anomalyMax = highest(focus, "anomaly");
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {cells.map((item) => (
-          <button
-            key={item.cellId}
-            onClick={() => setCellId(item.cellId)}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-left ${
-              item.cellId === cellId ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700"
-            }`}
-          >
-            <span className="block font-mono text-xs">{item.cellId}</span>
-            <span className={`block text-[10px] ${item.cellId === cellId ? "text-slate-300" : "text-slate-400"}`}>{item.city}</span>
-          </button>
-        ))}
-      </div>
+      <CellMultiples activeId={cellId} onSelect={setCellId} />
 
       {cell ? (
         <div className="flex flex-wrap items-center gap-3">
           <Badge value={cell.status} />
           <p className="text-sm text-slate-600">
-            {cell.band} · {cell.region} · worst anomaly {cell.maxAnomaly.toFixed(2)} · lowest accessibility {cell.minAccessibility.toFixed(1)}%
+            {cell.cellId} · {cell.band} · {cell.region}
+            {clusterWindow ? " · shaded band is the incident window" : " · no incident window on this cell"}
           </p>
         </div>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Accessibility against baseline" className="p-3">
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Lowest accessibility sample was {accessMin == null ? "—" : `${accessMin.toFixed(1)}%`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Scale is 70–100%. Dashed line is this cell’s rolling baseline.</p>
           <TrendChart
             points={points}
             measuredKey="accessibility"
             baselineKey="baselineAccessibility"
             measuredLabel="Accessibility"
-            baselineLabel="Baseline"
-            unit="%"
+            suffix="%"
+            domain={[70, 100]}
+            mark="min"
             windowStart={clusterWindow?.start}
             windowEnd={clusterWindow?.end}
           />
         </Panel>
-        <Panel title="Downlink throughput against baseline" className="p-3">
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Lowest downlink sample was {throughputMin == null ? "—" : `${throughputMin.toFixed(1)} Mbps`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero so the drop can be compared with the baseline.</p>
           <TrendChart
             points={points}
             measuredKey="throughput"
             baselineKey="baselineThroughput"
-            measuredLabel="Throughput Mbps"
-            baselineLabel="Baseline Mbps"
-            unit=""
+            measuredLabel="Downlink"
+            suffix=" Mbps"
+            domain="zero"
+            mark="min"
             windowStart={clusterWindow?.start}
             windowEnd={clusterWindow?.end}
             color="#0f172a"
           />
         </Panel>
-        <Panel title="Latency" className="p-3">
-          <TrendChart points={points} measuredKey="latency" measuredLabel="Latency ms" unit="" windowStart={clusterWindow?.start} windowEnd={clusterWindow?.end} color="#1d4ed8" />
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Latency peaked at {latencyMax == null ? "—" : `${latencyMax.toFixed(0)} ms`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero.</p>
+          <TrendChart
+            points={points}
+            measuredKey="latency"
+            measuredLabel="Latency"
+            suffix=" ms"
+            domain="zero"
+            mark="max"
+            windowStart={clusterWindow?.start}
+            windowEnd={clusterWindow?.end}
+            color="#334155"
+          />
         </Panel>
-        <Panel title="PRB utilisation" className="p-3">
-          <TrendChart points={points} measuredKey="prb" measuredLabel="PRB %" unit="%" windowStart={clusterWindow?.start} windowEnd={clusterWindow?.end} color="#7c3aed" />
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            PRB utilisation peaked at {prbMax == null ? "—" : `${prbMax.toFixed(0)}%`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Axis 0–100%. A high PRB is shown as measured, not treated as the cause.</p>
+          <TrendChart
+            points={points}
+            measuredKey="prb"
+            measuredLabel="PRB"
+            suffix="%"
+            domain="percent"
+            mark="max"
+            windowStart={clusterWindow?.start}
+            windowEnd={clusterWindow?.end}
+            color="#334155"
+          />
         </Panel>
-        <Panel title="Packet loss" className="p-3">
-          <TrendChart points={points} measuredKey="packetLoss" measuredLabel="Packet loss %" unit="%" windowStart={clusterWindow?.start} windowEnd={clusterWindow?.end} color="#b45309" />
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Packet loss peaked at {lossMax == null ? "—" : `${lossMax.toFixed(1)}%`}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Axis starts at zero.
+            {lossMax != null && lossMax > 2 ? " This cell crossed the 2% level the report uses as transport evidence." : ""}
+          </p>
+          <TrendChart
+            points={points}
+            measuredKey="packetLoss"
+            measuredLabel="Packet loss"
+            suffix="%"
+            domain="zero"
+            mark="max"
+            windowStart={clusterWindow?.start}
+            windowEnd={clusterWindow?.end}
+            color="#be123c"
+          />
         </Panel>
-        <Panel title="Anomaly score" className="p-3">
-          <TrendChart points={points} measuredKey="anomaly" measuredLabel="Anomaly score" unit="" windowStart={clusterWindow?.start} windowEnd={clusterWindow?.end} color="#be123c" />
+        <Panel className="p-4">
+          <h2 className="text-sm font-semibold text-slate-950">
+            Anomaly score peaked at {anomalyMax == null ? "—" : anomalyMax.toFixed(2)}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Model score, kept apart from the measured KPIs above. Axis starts at zero.</p>
+          <TrendChart
+            points={points}
+            measuredKey="anomaly"
+            measuredLabel="Anomaly score"
+            domain={[0, 1]}
+            mark="max"
+            windowStart={clusterWindow?.start}
+            windowEnd={clusterWindow?.end}
+            color="#be123c"
+          />
         </Panel>
       </div>
 

@@ -153,6 +153,23 @@ export type DriveTest = {
   clusters: string[];
 };
 
+/** Every drive-test coordinate from the raw log, including sites outside the incident. */
+export type GeoSample = {
+  id: string;
+  t: string;
+  siteId: string;
+  cellId: string;
+  city: string;
+  lat: number;
+  lng: number;
+  rsrp: number | null;
+  sinr: number | null;
+  latency: number | null;
+  download: number | null;
+  result: string;
+  clusters: string[];
+};
+
 export type TopologyEvent = {
   id: string;
   t: string;
@@ -193,6 +210,7 @@ export type NpmSnapshot = {
   alarms: Alarm[];
   complaints: Complaint[];
   driveTests: DriveTest[];
+  geoSamples: GeoSample[];
   topology: TopologyEvent[];
 };
 

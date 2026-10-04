@@ -14,6 +14,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { formatRange } from "@/lib/npm/format";
 import { snapshot } from "@/lib/npm/snapshot";
 import { cn } from "@/lib/utils";
 
@@ -63,8 +64,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
               href={item.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm",
-                active ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-white",
+                "flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2 text-sm",
+                active ? "border-teal-400 bg-white/10 text-white" : "border-transparent text-slate-400 hover:bg-white/5 hover:text-white",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -82,8 +83,11 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             className="block rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5"
           >
             <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Open incident</div>
-            <div className="mt-1 font-mono text-xs text-white">{incident.clusterId}</div>
-            <div className="mt-0.5 text-xs text-slate-400">{incident.cellId}</div>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+              <span className="font-mono text-xs text-white">{incident.cellId}</span>
+            </div>
+            <div className="mt-1 text-xs leading-4 text-slate-400">{incident.predictedRootCause}</div>
           </Link>
         ) : null}
         <Link
@@ -118,14 +122,26 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
               <Menu className="h-5 w-5" />
             </button>
             <p className="text-sm text-slate-600">
-              <span className="font-medium text-slate-900">Synthetic Telkom scenario</span>
-              <span className="hidden sm:inline"> · cell degradation · seed {snapshot.manifest.seed}</span>
+              <span className="font-medium text-slate-900">Synthetic Telkom</span>
+              <span className="hidden md:inline"> · {formatRange(snapshot.manifest.start, snapshot.manifest.end)}</span>
+              <span className="hidden text-slate-400 lg:inline"> · not a live feed</span>
             </p>
           </div>
-          <p className="hidden text-xs text-slate-500 md:block">Not a live network feed</p>
+          {incident ? (
+            <Link
+              href={`/incidents/${incident.clusterId}`}
+              className="inline-flex max-w-[16rem] items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1 text-xs sm:max-w-none"
+            >
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-600" />
+              <span className="truncate font-medium text-slate-900">{incident.cellId}</span>
+              <span className="hidden truncate text-slate-500 md:inline">{incident.predictedRootCause}</span>
+            </Link>
+          ) : (
+            <p className="text-xs text-slate-500">Not a live network feed</p>
+          )}
         </header>
         <main className="px-4 py-6 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-6xl">{children}</div>
+          <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

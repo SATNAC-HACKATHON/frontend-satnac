@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { DriveScatter } from "@/components/npm/charts";
+import { DriveMap } from "@/components/npm/drive-map";
 import { Badge, Panel } from "@/components/npm/ui";
 import { formatStamp } from "@/lib/npm/format";
+import { cn } from "@/lib/utils";
 import type { Alarm, Complaint, Detection, DriveTest, TopologyEvent } from "@/lib/types/npm";
 
 const sources = ["KPI windows", "Alarms", "Complaints", "Drive tests", "Topology"] as const;
@@ -24,7 +25,9 @@ export function EvidenceBoard({
   counts: { id: (typeof sources)[number]; dataset: number; inCluster: number; note: string }[];
 }) {
   const [source, setSource] = useState<(typeof sources)[number]>("KPI windows");
+  const [selectedDrive, setSelectedDrive] = useState<string | null>(null);
   const active = counts.find((item) => item.id === source);
+  const failedDrives = driveTests.filter((row) => row.result !== "pass").length;
 
   return (
     <div className="space-y-4">
@@ -44,9 +47,16 @@ export function EvidenceBoard({
 
       <Panel title={source} aside={<span className="max-w-sm text-right text-xs text-slate-400">{active?.note}</span>}>
         {source === "Drive tests" ? (
-          <div className="border-b border-slate-100 px-3 py-3">
-            <DriveScatter tests={driveTests} />
-            <p className="px-1 pb-2 text-xs text-slate-500">Teal points passed. Rose points failed. Positions are the synthetic drive-test coordinates.</p>
+          <div className="border-b border-slate-100">
+            <DriveMap
+              samples={driveTests}
+              initialSiteId={driveTests[0]?.siteId}
+              selectedId={selectedDrive}
+              onSelect={setSelectedDrive}
+              framed={false}
+              title={`${failedDrives} failed samples in this cluster, placed on the street map`}
+              caption="Green marks passed. Select a row below, or a failed sample beside the map, to centre that test. Coordinates stay in the data. The map is the location."
+            />
           </div>
         ) : null}
         <div className="max-h-[560px] overflow-auto">
@@ -136,7 +146,14 @@ export function EvidenceBoard({
               </thead>
               <tbody>
                 {driveTests.map((row) => (
-                  <tr key={row.id} className="border-t border-slate-100">
+                  <tr
+                    key={row.id}
+                    onClick={() => {
+                      setSelectedDrive(row.id);
+                      setSource("Drive tests");
+                    }}
+                    className={cn("cursor-pointer border-t border-slate-100", selectedDrive === row.id ? "bg-slate-100" : "hover:bg-slate-50")}
+                  >
                     <td className="px-4 py-2 font-mono text-xs text-slate-500">{formatStamp(row.t)}</td>
                     <td className="px-4 py-2 font-mono text-xs">{row.cellId}</td>
                     <td className="px-4 py-2"><Badge value={row.result} /></td>

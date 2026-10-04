@@ -1,3 +1,4 @@
+import { MagnitudeChart } from "@/components/npm/magnitude";
 import { ArtifactGaps, EpistemicPanel, Metric, PageHeader } from "@/components/npm/ui";
 import { openQuestions } from "@/lib/content/briefing";
 import { artifactGaps } from "@/lib/npm/derive";
@@ -7,15 +8,14 @@ import { snapshot } from "@/lib/npm/snapshot";
 export default function BenefitPage() {
   const summary = snapshot.summary;
   const cluster = snapshot.clusters[0];
-  const assistedWidth = Math.round((summary.assistedMinutes / summary.manualMinutes) * 100);
   const gaps = cluster ? artifactGaps(cluster) : [];
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Benefit"
-        title="What this scenario claims to save, and what is still an estimate"
-        description="The incident summary compares a 75-minute manual investigation with an 18-minute assisted one. Treat that as the demo baseline until an NPM engineer times the same case."
+        title={`This scenario is ${summary.savedMinutes} minutes shorter with the desk`}
+        description={`The incident summary compares a ${summary.manualMinutes}-minute manual investigation with a ${summary.assistedMinutes}-minute assisted one. Treat that as the demo baseline until an NPM engineer times the same case.`}
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -24,13 +24,16 @@ export default function BenefitPage() {
         <Metric label="Difference" value={`${summary.savedMinutes} min`} detail="Potential, on this one injected incident" />
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-slate-950">Investigation time on this scenario</h2>
-        <div className="mt-4 space-y-3">
-          <Bar label="Manual correlation" width={100} value={`${summary.manualMinutes} min`} />
-          <Bar label="With the desk" width={assistedWidth} value={`${summary.assistedMinutes} min`} />
-        </div>
-      </section>
+      <MagnitudeChart
+        title="Both estimates start at zero"
+        caption="Length is minutes from the incident summary. These are scenario estimates, not a stopwatch study."
+        max={summary.manualMinutes}
+        unit=" min"
+        rows={[
+          { id: "manual", label: "Manual correlation", value: summary.manualMinutes, tone: "ink" },
+          { id: "assisted", label: "With this desk", value: summary.assistedMinutes, tone: "steady" },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <EpistemicPanel kind="fact" title="Noise that can be grouped" source="incident_summary.csv">
@@ -55,20 +58,6 @@ export default function BenefitPage() {
       </section>
 
       <ArtifactGaps gaps={gaps} />
-    </div>
-  );
-}
-
-function Bar({ label, width, value }: { label: string; width: number; value: string }) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-sm">
-        <span className="text-slate-700">{label}</span>
-        <span className="font-mono text-slate-950">{value}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-teal-800" style={{ width: `${width}%` }} />
-      </div>
     </div>
   );
 }

@@ -14,8 +14,9 @@ export default function BriefingPage() {
         </h1>
         <p className="mt-3 text-base leading-7 text-slate-600">
           NPM engineers are buried in duplicate alarms and split evidence. This desk turns the synthetic Telkom
-          cell-degradation scenario into one ranked incident, with observed facts, model inferences, and the
-          recommended next step kept apart.
+          cell-degradation scenario into one ranked incident. Observed facts, model inferences, and the recommended
+          next step stay apart. Drive-test coordinates are drawn on a street map, and the charts use a shared scale
+          so the degraded cell can be seen without reading a table first.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/overview" className="rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white">

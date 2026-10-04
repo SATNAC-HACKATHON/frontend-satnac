@@ -66,7 +66,7 @@ export function SignalExplorer() {
           <h2 className="text-sm font-semibold text-slate-950">
             Lowest downlink sample was {throughputMin == null ? "—" : `${throughputMin.toFixed(1)} Mbps`}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero so the drop can be compared with the baseline.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Dashed line is the rolling baseline.</p>
           <TrendChart
             points={points}
             measuredKey="throughput"
@@ -84,7 +84,6 @@ export function SignalExplorer() {
           <h2 className="text-sm font-semibold text-slate-950">
             Latency peaked at {latencyMax == null ? "—" : `${latencyMax.toFixed(0)} ms`}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero.</p>
           <TrendChart
             points={points}
             measuredKey="latency"
@@ -101,7 +100,7 @@ export function SignalExplorer() {
           <h2 className="text-sm font-semibold text-slate-950">
             PRB utilisation peaked at {prbMax == null ? "—" : `${prbMax.toFixed(0)}%`}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Axis 0–100%. A high PRB is shown as measured, not treated as the cause.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Measured only. Not treated as the cause.</p>
           <TrendChart
             points={points}
             measuredKey="prb"
@@ -118,10 +117,9 @@ export function SignalExplorer() {
           <h2 className="text-sm font-semibold text-slate-950">
             Packet loss peaked at {lossMax == null ? "—" : `${lossMax.toFixed(1)}%`}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">
-            Axis starts at zero.
-            {lossMax != null && lossMax > 2 ? " This cell crossed the 2% level the report uses as transport evidence." : ""}
-          </p>
+          {lossMax != null && lossMax > 2 ? (
+            <p className="mt-1 text-xs leading-5 text-slate-500">Crossed the 2% level used as transport evidence.</p>
+          ) : null}
           <TrendChart
             points={points}
             measuredKey="packetLoss"
@@ -138,7 +136,7 @@ export function SignalExplorer() {
           <h2 className="text-sm font-semibold text-slate-950">
             Anomaly score peaked at {anomalyMax == null ? "—" : anomalyMax.toFixed(2)}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Model score, kept apart from the measured KPIs above. Axis starts at zero.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Model score, separate from the measured KPIs.</p>
           <TrendChart
             points={points}
             measuredKey="anomaly"

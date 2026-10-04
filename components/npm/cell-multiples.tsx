@@ -45,7 +45,7 @@ export function CellMultiples({
         {stableCount} cells held their range. {snapshot.cells.length - stableCount === 1 ? "One did not." : `${snapshot.cells.length - stableCount} did not.`}
       </h2>
       <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
-        Accessibility on one shared scale, 70% to 100%. The shaded band is the incident window, drawn only on the cell the pipeline clustered.
+        Shared scale, 70–100%. Shade is the incident window.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {cells.map((cell) => {

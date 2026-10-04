@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { InvestigationView } from "@/components/npm/investigation-view";
-import { ArtifactGaps, Badge, PageHeader, ReadingKey } from "@/components/npm/ui";
+import { ArtifactGaps, Badge, PageHeader } from "@/components/npm/ui";
 import {
   alarmsInCluster,
   artifactGaps,
@@ -13,7 +13,7 @@ import {
   siblingsOf,
   topologyFor,
 } from "@/lib/npm/derive";
-import { formatPct, formatWindow } from "@/lib/npm/format";
+import { formatWindow } from "@/lib/npm/format";
 import { snapshot } from "@/lib/npm/snapshot";
 
 export function generateStaticParams() {
@@ -34,8 +34,7 @@ export default async function IncidentPage({ params }: { params: Promise<{ id: s
       <PageHeader
         eyebrow={`${cluster.clusterId} · ${snapshot.summary.incidentId}`}
         title={cluster.predictedRootCause}
-        description={`${cluster.cellId} at ${cluster.siteId}. ${formatWindow(cluster.start, cluster.end)}. Peak detection ${peak ? peak.score.toFixed(0) : "—"} · pipeline confidence ${formatPct(cluster.confidence * 100, 0)}.`}
-        action={<ReadingKey />}
+        description={`${cluster.cellId} · ${formatWindow(cluster.start, cluster.end)}`}
       />
 
       <div className="flex flex-wrap items-center gap-2">

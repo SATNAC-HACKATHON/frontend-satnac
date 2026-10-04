@@ -32,7 +32,7 @@ function Frame({ samples, boundsKey }: { samples: MapSample[]; boundsKey: string
       map.invalidateSize();
       if (samples.length === 0) return;
       const bounds = L.latLngBounds(samples.map((sample) => [sample.lat, sample.lng] as [number, number]));
-      map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 });
+      map.fitBounds(bounds, { padding: [32, 32], maxZoom: 16 });
     });
     return () => cancelAnimationFrame(frame);
     // boundsKey changes only when the plotted set changes. Selection must not refit the map.
@@ -78,12 +78,21 @@ export function LeafletMap({
     <MapContainer
       center={[-26.204, 28.047]}
       zoom={13}
-      scrollWheelZoom={false}
+      minZoom={4}
+      maxZoom={19}
+      scrollWheelZoom
+      doubleClickZoom
+      touchZoom
+      boxZoom
+      keyboard
+      zoomControl
       className="h-full w-full"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={19}
+        maxNativeZoom={19}
       />
       <ScaleControl imperial={false} position="bottomleft" />
       <Frame samples={samples} boundsKey={boundsKey} />

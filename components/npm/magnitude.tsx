@@ -45,7 +45,7 @@ export function MagnitudeChart({
   const scale = max > 0 ? max : 1;
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4">
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
       {caption ? <p className="mt-1 text-xs leading-5 text-slate-500">{caption}</p> : null}
 
@@ -121,7 +121,7 @@ export function ProportionBar({
   const total = visible.reduce((sum, segment) => sum + segment.value, 0) || 1;
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4">
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
       {caption ? <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">{caption}</p> : null}
       <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-slate-100">

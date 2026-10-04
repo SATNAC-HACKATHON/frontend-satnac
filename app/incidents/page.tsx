@@ -71,7 +71,7 @@ export default function IncidentsPage() {
 
       <MagnitudeChart
         title="Why the queue has one name on it"
-        caption="Lowest accessibility sample, bars starting at 0%. The degraded cell is the only one the pipeline promoted."
+        caption="Lowest accessibility sample. The degraded cell is the only one promoted."
         max={100}
         unit="%"
         digits={1}

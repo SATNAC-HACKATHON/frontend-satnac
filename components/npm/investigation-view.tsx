@@ -6,7 +6,6 @@ import { DriveMap } from "@/components/npm/drive-map";
 import { MagnitudeChart } from "@/components/npm/magnitude";
 import { Badge, EpistemicPanel, Panel } from "@/components/npm/ui";
 import { formatPct, formatStamp } from "@/lib/npm/format";
-import { snapshot } from "@/lib/npm/snapshot";
 import { highest, lowest, windowPoints } from "@/lib/npm/stories";
 import { cn } from "@/lib/utils";
 import type {
@@ -52,8 +51,6 @@ export function InvestigationView({
   const accessMin = lowest(focus, "accessibility");
   const throughputMin = lowest(focus, "throughput");
   const lossMax = highest(focus, "packetLoss");
-  const city = snapshot.cells.find((cell) => cell.cellId === cluster.cellId)?.city ?? "";
-  const failedDrives = driveTests.filter((row) => row.result !== "pass").length;
 
   return (
     <div className="space-y-6">
@@ -87,7 +84,7 @@ export function InvestigationView({
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <MagnitudeChart
           title="Ranked causes, on one scale"
-          caption="Scores from rca_report.json. Bars start at zero and share 0–100. Select a cause to read its evidence."
+          caption="Select a cause to read its evidence."
           max={100}
           selectedId={cause?.rootCause}
           onSelect={(id) => setCauseIndex(Math.max(0, cluster.rankedCandidates.findIndex((candidate) => candidate.rootCause === id)))}
@@ -153,7 +150,6 @@ export function InvestigationView({
           <h2 className="text-sm font-semibold text-slate-950">
             Lowest downlink sample was {throughputMin == null ? "—" : `${throughputMin.toFixed(1)} Mbps`}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero.</p>
           <TrendChart
             points={series}
             measuredKey="throughput"
@@ -172,7 +168,9 @@ export function InvestigationView({
           <h2 className="text-sm font-semibold text-slate-950">
             Packet loss peaked at {lossMax == null ? "—" : `${lossMax.toFixed(1)}%`}
           </h2>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Axis starts at zero. Loss above 2% is cited as transport evidence.</p>
+          {lossMax != null && lossMax > 2 ? (
+            <p className="mt-1 text-xs leading-5 text-slate-500">Above the 2% level cited as transport evidence.</p>
+          ) : null}
           <TrendChart
             points={series}
             measuredKey="packetLoss"
@@ -196,8 +194,7 @@ export function InvestigationView({
           setSelectedDrive(id);
           if (id) setTab("Drive tests");
         }}
-        title={`${failedDrives} failed drive tests${city ? ` in ${city}` : ""}`}
-        caption="Red failed and green passed, on the coordinates from the drive-test log. Select a sample to centre it. The street names replace reading latitude and longitude."
+        title="Drive tests"
       />
 
       <Panel
@@ -224,12 +221,6 @@ export function InvestigationView({
         </div>
       </Panel>
 
-      <div>
-        <h2 className="text-sm font-semibold text-slate-950">Scenario summary, in its own words</h2>
-        <p className="mt-1 text-xs leading-5 text-slate-500">
-          This file tells the same story as the engineer report. Where a number differs, the table at the top of the page keeps both.
-        </p>
-      </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <EpistemicPanel kind="fact" title="Scenario summary facts" source="incident_summary.csv">
           {summary.observedFacts}

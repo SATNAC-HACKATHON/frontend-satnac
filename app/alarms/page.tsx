@@ -16,11 +16,11 @@ export default function AlarmsPage() {
       <PageHeader
         eyebrow="Noise reduction"
         title="Related alarms collapse into one incident"
-        description="Symptoms that share a duplicate group sit together. An alarm that joined only because of the time window stays visible, so the grouping can be challenged."
+        description="Duplicate group first. The time-window alarm stays marked."
       />
       <ProportionBar
         title={`${correlated.length} alarms are one duplicate group`}
-        caption="Bar length is the alarm count. Teal marks the duplicate group. Amber marks cluster members that were not tagged as duplicates. Grey is everything left outside the incident."
+        caption="Teal is the duplicate group. Amber joined on the time window only."
         segments={[
           { id: "group", label: "duplicate group", value: correlated.length, color: "#0f766e" },
           { id: "extra", label: "time-window only", value: extra, color: "#b45309" },

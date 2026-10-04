@@ -42,7 +42,7 @@ export default function EvidencePage() {
       <PageHeader
         eyebrow="Correlation"
         title="The same incident, seen from each source"
-        description="Root-cause work needs the KPI drop, the counters, the alarms, the complaints, the drive tests, and the config change in one place. Counts below are cluster membership, not the whole dataset."
+        description="Counts are this incident, not the full extract."
       />
       <EvidenceBoard
         detections={snapshot.detections}

@@ -15,7 +15,7 @@ export default function BenefitPage() {
       <PageHeader
         eyebrow="Benefit"
         title={`This scenario is ${summary.savedMinutes} minutes shorter with the desk`}
-        description={`The incident summary compares a ${summary.manualMinutes}-minute manual investigation with a ${summary.assistedMinutes}-minute assisted one. Treat that as the demo baseline until an NPM engineer times the same case.`}
+        description="Scenario estimate, until an engineer times this case."
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -25,8 +25,8 @@ export default function BenefitPage() {
       </div>
 
       <MagnitudeChart
-        title="Both estimates start at zero"
-        caption="Length is minutes from the incident summary. These are scenario estimates, not a stopwatch study."
+        title="Manual correlation versus the desk"
+        caption="Minutes from the incident summary."
         max={summary.manualMinutes}
         unit=" min"
         rows={[

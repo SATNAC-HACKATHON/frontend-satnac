@@ -27,7 +27,6 @@ export function EvidenceBoard({
   const [source, setSource] = useState<(typeof sources)[number]>("KPI windows");
   const [selectedDrive, setSelectedDrive] = useState<string | null>(null);
   const active = counts.find((item) => item.id === source);
-  const failedDrives = driveTests.filter((row) => row.result !== "pass").length;
 
   return (
     <div className="space-y-4">
@@ -54,8 +53,7 @@ export function EvidenceBoard({
               selectedId={selectedDrive}
               onSelect={setSelectedDrive}
               framed={false}
-              title={`${failedDrives} failed samples in this cluster, placed on the street map`}
-              caption="Green marks passed. Select a row below, or a failed sample beside the map, to centre that test. Coordinates stay in the data. The map is the location."
+              title="Drive tests"
             />
           </div>
         ) : null}

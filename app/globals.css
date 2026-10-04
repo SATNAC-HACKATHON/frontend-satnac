@@ -11,7 +11,7 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background: #f3f5f7;
+  background: #f8fafc;
   color: #0f172a;
   font-feature-settings: "ss01" on, "cv11" on;
   letter-spacing: -0.011em;

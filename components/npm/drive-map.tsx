@@ -9,8 +9,11 @@ import type { MapSample } from "@/components/npm/leaflet-map";
 
 const LeafletMap = dynamic(() => import("@/components/npm/leaflet-map").then((mod) => mod.LeafletMap), {
   ssr: false,
-  loading: () => <div className="h-full w-full animate-pulse bg-[#e6eef2]" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-slate-100" />,
 });
+
+const fieldClass =
+  "h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-sky-100";
 
 function decorate(samples: MapSample[]) {
   const cities = new Map(snapshot.cells.map((cell) => [cell.cellId, cell.city]));
@@ -21,12 +24,11 @@ function decorate(samples: MapSample[]) {
 }
 
 function rollup(samples: MapSample[]) {
-  const sites = new Map<string, { siteId: string; city: string; pass: number; fail: number }>();
+  const sites = new Map<string, { siteId: string; city: string; fail: number }>();
   for (const sample of samples) {
-    const current = sites.get(sample.siteId) ?? { siteId: sample.siteId, city: sample.city || sample.siteId, pass: 0, fail: 0 };
+    const current = sites.get(sample.siteId) ?? { siteId: sample.siteId, city: sample.city || sample.siteId, fail: 0 };
     if (sample.city) current.city = sample.city;
-    if (sample.result === "pass") current.pass += 1;
-    else current.fail += 1;
+    if (sample.result !== "pass") current.fail += 1;
     sites.set(sample.siteId, current);
   }
   return [...sites.values()].sort((a, b) => b.fail - a.fail || a.city.localeCompare(b.city));
@@ -35,7 +37,6 @@ function rollup(samples: MapSample[]) {
 export function DriveMap({
   samples,
   title,
-  caption,
   initialSiteId,
   selectedId: selectedIdProp,
   onSelect,
@@ -51,12 +52,15 @@ export function DriveMap({
 }) {
   const prepared = useMemo(() => decorate(samples), [samples]);
   const sites = useMemo(() => rollup(prepared), [prepared]);
-  const startingSite =
+  const defaultSite =
     initialSiteId && sites.some((site) => site.siteId === initialSiteId)
       ? initialSiteId
-      : (sites.find((site) => site.fail > 0)?.siteId ?? "all");
-  const [siteId, setSiteId] = useState(startingSite);
-  const [result, setResult] = useState<"all" | "pass" | "fail">("all");
+      : (sites.find((site) => site.fail > 0)?.siteId ?? sites[0]?.siteId ?? "all");
+  const defaultResult = prepared.some((sample) => sample.siteId === defaultSite && sample.result !== "pass") ? "fail" : "all";
+
+  const [siteId, setSiteId] = useState(defaultSite);
+  const [cellId, setCellId] = useState("all");
+  const [result, setResult] = useState<"all" | "pass" | "fail">(defaultResult);
   const [internalId, setInternalId] = useState<string | null>(null);
   const controlled = selectedIdProp !== undefined;
   const selectedId = controlled ? selectedIdProp : internalId;
@@ -64,164 +68,141 @@ export function DriveMap({
   function choose(id: string | null) {
     if (!controlled) setInternalId(id);
     onSelect?.(id);
-    if (!id) return;
-    const sample = prepared.find((item) => item.id === id);
-    if (!sample) return;
-    if (result === "pass" && sample.result !== "pass") setResult("all");
-    if (result === "fail" && sample.result === "pass") setResult("all");
   }
 
   const siteSamples = siteId === "all" ? prepared : prepared.filter((sample) => sample.siteId === siteId);
+  const cells = [...new Set(siteSamples.map((sample) => sample.cellId))].sort();
+  const cellSamples = cellId === "all" ? siteSamples : siteSamples.filter((sample) => sample.cellId === cellId);
   const visible =
     result === "all"
-      ? siteSamples
-      : siteSamples.filter((sample) => (result === "pass" ? sample.result === "pass" : sample.result !== "pass"));
-  const failures = siteSamples
-    .filter((sample) => sample.result !== "pass")
-    .sort((a, b) => a.t.localeCompare(b.t));
+      ? cellSamples
+      : cellSamples.filter((sample) => (result === "pass" ? sample.result === "pass" : sample.result !== "pass"));
+  const failures = cellSamples.filter((sample) => sample.result !== "pass").sort((a, b) => a.t.localeCompare(b.t));
   const selected = prepared.find((sample) => sample.id === selectedId) ?? null;
-  const boundsKey = `${siteId}|${result}|${visible.length}`;
-  const passedCount = visible.filter((sample) => sample.result === "pass").length;
-  const failedCount = visible.length - passedCount;
+  const boundsKey = `${siteId}|${cellId}|${result}|${visible.length}`;
+  const cityName = sites.find((site) => site.siteId === siteId)?.city;
+  const filtered = siteId !== defaultSite || cellId !== "all" || result !== defaultResult || Boolean(selectedId);
+
+  function reset() {
+    setSiteId(defaultSite);
+    setCellId("all");
+    setResult(defaultResult);
+    choose(null);
+  }
 
   return (
-    <section className={framed ? "flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white" : "flex h-full flex-col overflow-hidden bg-white"}>
-      <div className="border-b border-slate-100 px-4 py-3">
-        <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
-        {caption ? <p className="mt-1 text-xs leading-5 text-slate-500">{caption}</p> : null}
-      </div>
-
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_15.5rem]">
-        <div className="field-map relative h-[520px] border-b border-slate-100 lg:border-r lg:border-b-0">
-          {visible.length === 0 ? (
-            <p className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-slate-500">
-              No drive tests in this view.
-            </p>
-          ) : (
-            <div className="absolute inset-0">
-              <LeafletMap samples={visible} boundsKey={boundsKey} selectedId={selectedId ?? null} onSelect={choose} />
-            </div>
-          )}
+    <section className={cn("overflow-hidden bg-white", framed && "rounded-2xl border border-slate-200 shadow-sm")}>
+      <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
+          <p className="text-xs text-slate-500">
+            {visible.length} on the map
+            {cityName ? ` · ${cityName}` : ""}
+          </p>
         </div>
-
-        <aside className="flex h-[420px] flex-col lg:h-[520px]">
-          <div className="space-y-1 border-b border-slate-100 p-2">
-            {sites.length > 1 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSiteId("all");
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-500">City</span>
+            <select
+              className={fieldClass}
+              value={siteId}
+              onChange={(event) => {
+                setSiteId(event.target.value);
+                setCellId("all");
+                choose(null);
+              }}
+            >
+              {sites.length > 1 ? <option value="all">All cities</option> : null}
+              {sites.map((site) => (
+                <option key={site.siteId} value={site.siteId}>
+                  {site.city}
+                  {site.fail ? ` · ${site.fail} failed` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-500">Cell</span>
+            <select
+              className={fieldClass}
+              value={cellId}
+              onChange={(event) => {
+                setCellId(event.target.value);
+                choose(null);
+              }}
+            >
+              <option value="all">All cells</option>
+              {cells.map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-500">Result</span>
+            <select
+              className={fieldClass}
+              value={result}
+              onChange={(event) => {
+                setResult(event.target.value as "all" | "pass" | "fail");
+                choose(null);
+              }}
+            >
+              <option value="fail">Failed</option>
+              <option value="pass">Passed</option>
+              <option value="all">Failed and passed</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-500">Failed test</span>
+            <select
+              className={fieldClass}
+              value={failures.some((sample) => sample.id === selectedId) ? selectedId ?? "" : ""}
+              onChange={(event) => {
+                const id = event.target.value;
+                if (!id) {
                   choose(null);
-                }}
-                className={cn(
-                  "w-full rounded-lg px-2.5 py-2 text-left text-sm",
-                  siteId === "all" ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-50",
-                )}
-              >
-                All sites
-              </button>
-            ) : null}
-            {sites.map((site) => {
-              const active = siteId === site.siteId;
-              return (
-                <button
-                  key={site.siteId}
-                  type="button"
-                  onClick={() => {
-                    setSiteId(site.siteId);
-                    choose(null);
-                  }}
-                  className={cn("w-full rounded-lg px-2.5 py-2 text-left", active ? "bg-slate-900 text-white" : "hover:bg-slate-50")}
-                >
-                  <span className={cn("block text-sm font-medium", active ? "text-white" : "text-slate-900")}>{site.city}</span>
-                  <span className={cn("mt-0.5 block font-mono text-[11px]", active ? "text-slate-300" : "text-slate-500")}>{site.siteId}</span>
-                  <span className={cn("mt-1 block text-[11px]", active ? "text-slate-300" : site.fail ? "text-rose-700" : "text-emerald-800")}>
-                    {site.fail ? `${site.fail} failed` : "All passed"} · {site.pass} passed
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-auto">
-            <div className="px-3 pt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">Failed samples</div>
-            {failures.length === 0 ? (
-              <p className="px-3 py-3 text-sm text-slate-500">No failed drive tests here.</p>
-            ) : (
-              <ul>
-                {failures.map((sample) => (
-                  <li key={sample.id}>
-                    <button
-                      type="button"
-                      onClick={() => choose(sample.id)}
-                      className={cn(
-                        "w-full border-t border-slate-100 px-3 py-2 text-left",
-                        selectedId === sample.id ? "bg-rose-50" : "hover:bg-slate-50",
-                      )}
-                    >
-                      <span className="font-mono text-[11px] text-slate-500">{formatClock(sample.t)}</span>
-                      <span className="mt-0.5 block text-sm text-slate-900">{sample.cellId}</span>
-                      <span className="text-[11px] text-slate-500">
-                        {sample.download == null ? "—" : `${sample.download.toFixed(1)} Mbps`}
-                        {sample.latency == null ? "" : ` · ${sample.latency.toFixed(0)} ms`}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </aside>
+                  return;
+                }
+                if (result === "pass") setResult("fail");
+                choose(id);
+              }}
+            >
+              <option value="">{failures.length ? `${failures.length} failed tests` : "No failed tests"}</option>
+              {failures.map((sample) => (
+                <option key={sample.id} value={sample.id}>
+                  {formatClock(sample.t)} · {sample.cellId}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="flex items-center justify-between gap-3 text-xs">
+          <p className="text-slate-500">
+            {selected
+              ? `${selected.cellId} · ${selected.result === "pass" ? "Passed" : "Failed"} · ${formatClock(selected.t)}${selected.download == null ? "" : ` · ${selected.download.toFixed(1)} Mbps`}`
+              : "Click a mark for the test."}
+          </p>
+          {filtered ? (
+            <button type="button" onClick={reset} className="shrink-0 font-medium text-sky-700 hover:text-sky-800">
+              Clear filters
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 px-4 py-2.5 text-xs">
-        <FilterChip active={result === "all"} onClick={() => setResult("all")}>
-          All results
-        </FilterChip>
-        <FilterChip active={result === "fail"} onClick={() => setResult("fail")}>
-          <span className="h-2 w-2 rounded-full bg-[#be123c]" />
-          Failed {failedCount}
-        </FilterChip>
-        <FilterChip active={result === "pass"} onClick={() => setResult("pass")}>
-          <span className="h-2 w-2 rounded-full bg-[#15803d]" />
-          Passed {passedCount}
-        </FilterChip>
-        {selected ? (
-          <span className="text-slate-600">
-            <span className="font-medium text-slate-900">{selected.cellId}</span>
-            {" · "}
-            {selected.result === "pass" ? "Passed" : "Failed"}
-            {selected.download == null ? "" : ` · ${selected.download.toFixed(1)} Mbps`}
-            {" · "}
-            {formatClock(selected.t)}
-          </span>
+      <div className="field-map relative h-[560px]">
+        {visible.length === 0 ? (
+          <p className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-slate-500">
+            Nothing matches these filters.
+          </p>
         ) : (
-          <span className="text-slate-400">Select a failed sample to centre the map on it.</span>
+          <div className="absolute inset-0">
+            <LeafletMap samples={visible} boundsKey={boundsKey} selectedId={selectedId ?? null} onSelect={choose} />
+          </div>
         )}
       </div>
     </section>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium",
-        active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-      )}
-    >
-      {children}
-    </button>
   );
 }

@@ -38,10 +38,10 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
   const incident = snapshot.clusters[0];
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-[#10161d] text-slate-300">
+    <div className="flex h-full flex-col border-r border-slate-800/50 bg-slate-950 text-slate-300">
       <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
         <Link href="/overview" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-teal-700 text-sm font-semibold text-white">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-sky-600 text-sm font-semibold text-white">
             NPM
           </span>
           <span className="leading-tight">
@@ -64,8 +64,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
               href={item.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg border-l-2 px-3 py-2 text-sm",
-                active ? "border-teal-400 bg-white/10 text-white" : "border-transparent text-slate-400 hover:bg-white/5 hover:text-white",
+                "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium",
+                active ? "bg-sky-500/10 text-sky-400" : "text-slate-400 hover:bg-slate-800/60 hover:text-white",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -106,7 +106,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-svh bg-[#f3f5f7] text-slate-900">
+    <div className="min-h-svh bg-slate-50 text-slate-900">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] lg:block">{sidebar}</aside>
       {open ? (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -116,7 +116,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       ) : null}
 
       <div className="lg:pl-[248px]">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-slate-200 bg-[#f3f5f7]/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <button className="rounded-md p-1.5 text-slate-600 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
               <Menu className="h-5 w-5" />

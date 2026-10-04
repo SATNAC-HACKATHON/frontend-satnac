@@ -53,9 +53,9 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="max-w-3xl">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-800">{eyebrow}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-[1.7rem]">{title}</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+        <p className="text-sm font-medium text-sky-700">{eyebrow}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{title}</h1>
+        {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
       </div>
       {action}
     </div>
@@ -72,10 +72,10 @@ export function Metric({
   detail?: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</div>
-      <div className="mt-2 font-mono text-[1.65rem] font-semibold leading-none tracking-tight text-slate-950">{value}</div>
-      {detail ? <p className="mt-2 text-sm leading-5 text-slate-500">{detail}</p> : null}
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="text-sm font-medium text-slate-500">{label}</div>
+      <div className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{value}</div>
+      {detail ? <p className="mt-2 text-xs text-slate-400">{detail}</p> : null}
     </div>
   );
 }
@@ -92,7 +92,7 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-xl border border-slate-200 bg-white", className)}>
+    <section className={cn("rounded-2xl border border-slate-200 bg-white shadow-sm", className)}>
       {title ? (
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
@@ -122,7 +122,7 @@ export function EpistemicPanel({
   children: React.ReactNode;
 }) {
   return (
-    <article className={cn("rounded-xl border border-slate-200 border-l-4 bg-white", epistemicBorder[kind])}>
+    <article className={cn("rounded-2xl border border-slate-200 border-l-4 bg-white shadow-sm", epistemicBorder[kind])}>
       <div className="flex items-start justify-between gap-3 px-4 pt-4">
         <div>
           <Badge value={kind} />
@@ -135,30 +135,10 @@ export function EpistemicPanel({
   );
 }
 
-export function ReadingKey() {
-  return (
-    <div className="flex flex-wrap gap-2 text-[11px] text-slate-500">
-      <span className="inline-flex items-center gap-1.5">
-        <Badge value="fact" /> measured or recorded
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <Badge value="inference" /> model judgement
-      </span>
-      <span className="inline-flex items-center gap-1.5">
-        <Badge value="recommendation" /> suggested next step, not an applied fix
-      </span>
-    </div>
-  );
-}
-
 export function ArtifactGaps({ gaps }: { gaps: ArtifactGap[] }) {
   if (gaps.length === 0) return null;
   return (
     <Panel title="Two outputs, kept separate" aside={<span className="text-xs text-slate-400">Do not average these</span>}>
-      <p className="px-4 pt-3 text-sm leading-6 text-slate-600">
-        The scenario summary and the pipeline cluster describe the same demo, but they do not agree on every count.
-        Each number below keeps the file it came from.
-      </p>
       <div className="overflow-x-auto px-2 py-3">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="text-[11px] uppercase tracking-wide text-slate-400">

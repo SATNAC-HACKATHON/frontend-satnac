@@ -21,9 +21,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NPM Desk — AI-assisted network performance decisions",
+  title: "NextOps — AI-assisted network performance decisions",
   description:
-    "Proof of concept for Telkom AI-assisted Network Performance Management decision support. Facts, inferences, and recommendations stay separate.",
+    "Proof of concept for Telkom AI-assisted Network Operations decision support. Facts, inferences, and recommendations stay separate.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

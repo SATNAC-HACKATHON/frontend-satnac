@@ -1,6 +1,6 @@
-# NPM Desk
+# NextOps
 
-Next.js desk for the SATNAC Topic 5 proof of concept: AI-assisted Network Performance Management.
+Next.js desk for the SATNAC Topic 5 proof of concept: AI-assisted Network Operations.
 
 The desk shows one synthetic Telkom incident at cell `JHB-CBD-003-B`. Observed facts, model inferences, and the recommended next step stay separate. It does not change the network.
 

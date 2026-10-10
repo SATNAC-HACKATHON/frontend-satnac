@@ -42,10 +42,10 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-16 items-center justify-between border-b border-white/10 px-4">
         <Link href="/overview" className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-sky-600 text-sm font-semibold text-white">
-            NPM
+            NO
           </span>
           <span className="leading-tight">
-            <span className="block text-sm font-semibold text-white">NPM Desk</span>
+            <span className="block text-sm font-semibold text-white">NextOps</span>
             <span className="block text-[11px] text-slate-400">Decision support</span>
           </span>
         </Link>
